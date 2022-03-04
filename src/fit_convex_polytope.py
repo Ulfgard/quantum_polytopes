@@ -56,7 +56,7 @@ def sample_boundary_points(A_full, b_full, boundsA, boundsb, points_per_boundary
 
         
         #step 2.1:find the circle with maximum circumference inside the projected facet
-        norm_vector = np.linalg.norm(A[:,1:], axis=1)
+        norm_vector = np.linalg.norm(A[:,1:], axis=1)#since we project away the first dimension, norms need to exclude the first dimension.
         
         r = cp.Variable(1)
         y = cp.Variable(d)
@@ -66,6 +66,8 @@ def sample_boundary_points(A_full, b_full, boundsA, boundsb, points_per_boundary
             (boundsA@Q.T)@y + r + boundsb <= 0, #also take bound constraints into account
             r >=0
         ]
+        
+        #try to solve the problem
         prob = cp.Problem(cp.Maximize(r),constraints=lin_constraints)
         try:
             prob.solve(verbose=False,max_iters=10000)
@@ -76,8 +78,9 @@ def sample_boundary_points(A_full, b_full, boundsA, boundsb, points_per_boundary
         if status not in ["infeasible", "infeasible_inaccurate"]:
             r = r.value[0]
             y = y.value
-        else:
-            #transition does not intersect. Find minimum offset to boundary to make it intersect at at least a single point
+        else: # SOLVING PROBLEM FAILED FOR SOME REASON.
+        
+            #transition might not intersect. Find minimum offset to boundary to make it intersect at at least a single point
             y = cp.Variable(d)
             lin_constraints = [
                 A @ y + b <= 0, #linear boundaries are only allowed to intersect the sphere once
@@ -91,7 +94,7 @@ def sample_boundary_points(A_full, b_full, boundsA, boundsb, points_per_boundary
         #now, finally we can sample a point on a disc with radius r around y
         #project back and store
         for k in range(points_per_boundary):
-            if y is None:
+            if y is None: #solver might fail in the second sub problem. then we can't sample.
                 break
             if not do_sample[i] or (k > 0 and r == 0.0):
                 break
@@ -109,7 +112,7 @@ def sample_boundary_points(A_full, b_full, boundsA, boundsb, points_per_boundary
 def sample_model(device, x_m_old, A, b, do_sample = None):
     points, rs, _ = sample_boundary_points(A, b, device.boundsA, device.boundsb, do_sample=do_sample)
     
-    #find largest inscribed sphere
+    #find center of polytope as point that has minimum distance to all points inside the polytope.
     midpoint = cp.Variable(x_m_old.shape[1])
     f=cp.mixed_norm(x_m_old - cp.reshape(midpoint,(1,x_m_old.shape[1])),2,1)
     cp.Problem(cp.Minimize(f)).solve(max_iters=1000)
@@ -118,6 +121,7 @@ def sample_model(device, x_m_old, A, b, do_sample = None):
     assert(device.inside_state(midpoint))
     x_m =[]
     x_p =[]
+    #conduct line-search starting from midpoint in the direction of the computed sample locations on the boundary
     for i in range(points.shape[0]):
         p = points[i,:] - midpoint
         
@@ -129,6 +133,8 @@ def sample_model(device, x_m_old, A, b, do_sample = None):
     x_p = np.array(x_p)
     return x_m, x_p, points.shape[0], rs
 
+
+#SOLVER OF THE SUBPROBLEM
 
 def log1pexp(x):
     return np.log(1+np.exp(-np.abs(x))) + np.maximum(x,0) 
@@ -179,7 +185,7 @@ def solve_max_likelihood_problem(x_m, x_p, alpha_init, s_init, b_init, G, eta, d
     res = minimize(obj, x_init, jac=grad(obj), tol=1.e-4, options={'disp':True})
     return res.x[:n], res.x[n:n+m], res.x[n+m:]
     
-def stopping_criterion(A, b, x_m, x_p, delta):
+def count_separating(A, b, x_m, x_p, delta):
     m = A.shape[0]
     d = A.shape[1]
     counts = np.zeros(m,dtype=np.int64)
@@ -194,12 +200,12 @@ def stopping_criterion(A, b, x_m, x_p, delta):
     #ignore points that are separated by multiple facets as they can be problematic
     # if np.sum(separated[i]] == 1:
         counts[separated[i]] += 1
-            
-    #if there are d+1 close samples on all facets, we are done.
-    # add  a few more samples just for the sake of precision
-    stop = np.min(counts) >= d + 5
-    return stop, counts, counts > (d + 5)
     
+    return counts
+    
+    
+    
+# GENERATING T
     
 def generate_transitions_for_state(target_state, max_k=3, max_moves = None, has_reservoir=True):
     n_dots = target_state.shape[0]
@@ -249,7 +255,9 @@ def generate_transitions_for_state(target_state, max_k=3, max_moves = None, has_
     return G
     
     
-#an implementation of the full algorithm using state for easy future usage
+# THE MAIN ALGORITHM
+    
+#an implementation of the full algorithm
 def learn_convex_polytope(device, delta, startpoint, G, eta, max_searches = 15000):
     #function to filter close duplicates
     def filter_close(x, y, delta):
@@ -279,16 +287,8 @@ def learn_convex_polytope(device, delta, startpoint, G, eta, max_searches = 1500
         b0 = -np.max(A@x_m.T,axis=1)#+0.5*delta*np.linalg.norm(A,axis=1)
         b[renew_idx] = b0[renew_idx]
         
-        #check if alpha needs to be reset
-        #we check whether we found a facet that includes an alpha and its label must have more than one electron location
-        #multi_electron=(np.sum(G != 0,axis=1) > 1).reshape(-1,1)
-        #found_facet = (~renew_idx).reshape(-1,1)
-        #alpha_witness = np.logical_and(found_facet,multi_electron)*(G != 0)
-        #reset_alpha = np.logical_and((np.sum(alpha_witness,axis=0) == 0), np.abs(alpha) > np.log(1.3))
-        #alpha[reset_alpha] = 0.0
-        
         #fit model
-        alpha,s, b = solve_max_likelihood_problem(x_m, x_p, alpha, s, b, G, eta, delta)
+        alpha, s, b = solve_max_likelihood_problem(x_m, x_p, alpha, s, b, G, eta, delta)
         
         A = compute_planes(alpha, s, G, eta)
         found = np.linalg.norm(A,axis=1)> 0.1/delta
@@ -311,7 +311,7 @@ def learn_convex_polytope(device, delta, startpoint, G, eta, max_searches = 1500
         
         max_r_not_found = np.max(np.append(rs[~found],0.0))
         filter = np.logical_and(found, rs>2*delta)
-        _, counts, _ = stopping_criterion(A, b, x_m, x_p, delta)
+        counts = count_separating(A, b, x_m, x_p, delta)
         
         print("found:", np.sum(filter), "max_rad not found:", max_r_not_found)
         for pos in np.where(filter)[0]:
