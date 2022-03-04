@@ -1,6 +1,7 @@
 # quantum_polytopes
 
-##Requirements
+## Requirements
+
 We conducted the experiments with python 3.8. The following python packages must be installed:
 
 - numpy
