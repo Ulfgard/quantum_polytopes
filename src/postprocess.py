@@ -36,8 +36,8 @@ for base,rho,delta in all_experiments:
     A0searches = np.ones(20)
     for run in range(20):
         
-        file_truth = "results/"+base+"/truth_"+base+"_"+str(run+1)+"_"+str(rho)+"_"+str(delta)+".pkl"
-        file_res = "results/"+base+"/estimate_"+base+"_"+str(run+1)+"_"+str(rho)+"_"+str(delta)+".pkl"
+        file_truth = "results/truth_"+base+"_"+str(run+1)+"_"+str(rho)+"_"+str(delta)+".pkl"
+        file_res = "results/estimate_"+base+"_"+str(run+1)+"_"+str(rho)+"_"+str(delta)+".pkl"
         try:
             with open(file_truth, "rb") as f:
                 data_truth = pickle.load(f)
@@ -47,9 +47,10 @@ for base,rho,delta in all_experiments:
             print("error loading run "+file_truth+". Skipping.")
             A0success[run] = False
             continue     
+            
         #evaluate A0
-        A0_truth = data_truth['A0']
-        A0_res = data_res['A0']
+        A0_truth = data_truth['gamma']
+        A0_res = data_res['gamma']
         A0_truth /= np.linalg.norm(A0_truth,axis=1).reshape(-1,1)
         A0_res /= np.linalg.norm(A0_res,axis=1).reshape(-1,1)
         
@@ -58,11 +59,11 @@ for base,rho,delta in all_experiments:
         
         err_A0[run] = np.arccos(np.diag(A0_truth@A0_res.T))
         err_virt[run] = np.arccos(np.diag(virt_coords))
-        #evaluate success
-        A0matches = np.sum(data_res['A0info'][-1][1] >=dim_base+5)
-        A0success[run] = (A0matches == dim_base)
         
-        A0searches[run] = data_res['A0info'][-1][0]
+        # evaluate success
+        A0matches = np.sum(data_res['gammainfo'][-1][1] >=dim_base+5)
+        A0success[run] = (A0matches == dim_base)
+        A0searches[run] = data_res['gammainfo'][-1][0]
         
         #no need to continue, if step 1 failed
         if not A0success[run]:
