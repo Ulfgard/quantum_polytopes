@@ -290,14 +290,9 @@ def generate_transitions_for_state(target_state, max_k=3, max_moves = None, has_
         Gs[k] = Gs[k][keep]
     
     # Select based on reservoir
-    G = []
-    for k in range(1,len(Gs)): #max_k+1):
-        if not has_reservoir:
-            if np.sum(Gs[k]) != 0:
-                continue
-
-        G.append(Gs[k])
-    G=np.vstack(G)
+    G=np.vstack(Gs[1:])
+    if not has_reservoir:
+        G=G[np.sum(G,axis=1)==0]
     return G
     
     
