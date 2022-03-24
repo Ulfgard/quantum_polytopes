@@ -42,14 +42,14 @@ elif experiment == "3x3": #S3
 elif experiment == "shuttle": #S1
         n_rows = 3
         n_cols = 2
-        has_reservoir = False
+        has_reservoir = True
         target_states = np.array([[1,0,0,0,1,0],[1,0,1,0,0,0],[1,0,0,1,0,0], [0,0,1,1,0,0], [0,0,0,1,1,0], [0,0,1,0,1,0]], dtype=np.int64)
         sim = sim_NxM(n_rows, n_cols, delta, rho)
         Ts = [generate_transitions_for_state(s, max_k=2, max_moves = 1) for s in target_states]
 elif experiment == "shuttle3": #S1 with more states learned
         n_rows = 3
         n_cols = 2
-        has_reservoir = False
+        has_reservoir = True
         target_states = np.array([[1,0,0,0,1,0],[1,0,1,0,0,0],[1,0,0,1,0,0], [0,0,1,1,0,0], [0,0,0,1,1,0], [0,0,1,0,1,0]], dtype=np.int64)
         sim = sim_NxM(n_rows, n_cols, delta, rho)
         Ts = [generate_transitions_for_state(s, max_k=3, max_moves = 2) for s in target_states]
@@ -145,6 +145,7 @@ for state_idx,target_state in enumerate(target_states):
     #print some info
     print("state:", target_state, polytope.point_inside)
     print("transitions_of_state:",polytope.A.shape[0])
+    print(polytope.A)
     sys.stdout.flush()
 
     #step 2: fit the polytope
