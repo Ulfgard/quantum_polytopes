@@ -291,10 +291,10 @@ for j,rho,delta in settings:
                 workable[shuttle_ind_prev[ind]] += poly["workable"][pos_prev]
                 
         num_workable = np.sum(workable > 0)
-        if num_workable == 6:
-            solved += 1
         if num_exist == 6:
             possible += 1
+            if num_workable == 6:
+                solved += 1
     print("num shuttle solved:", rho, delta, solved, possible)
 
 t=np.array([-1,1,1,-1,-1,1])

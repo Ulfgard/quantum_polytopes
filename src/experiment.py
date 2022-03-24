@@ -46,6 +46,13 @@ elif experiment == "shuttle": #S1
         target_states = np.array([[1,0,0,0,1,0],[1,0,1,0,0,0],[1,0,0,1,0,0], [0,0,1,1,0,0], [0,0,0,1,1,0], [0,0,1,0,1,0]], dtype=np.int64)
         sim = sim_NxM(n_rows, n_cols, delta, rho)
         Ts = [generate_transitions_for_state(s, max_k=2, max_moves = 1) for s in target_states]
+elif experiment == "shuttle3": #S1 with more states learned
+        n_rows = 3
+        n_cols = 2
+        has_reservoir = False
+        target_states = np.array([[1,0,0,0,1,0],[1,0,1,0,0,0],[1,0,0,1,0,0], [0,0,1,1,0,0], [0,0,0,1,1,0], [0,0,1,0,1,0]], dtype=np.int64)
+        sim = sim_NxM(n_rows, n_cols, delta, rho)
+        Ts = [generate_transitions_for_state(s, max_k=3, max_moves = 2) for s in target_states]
     
 elif experiment == "ladder": #S2
         n_rows = 3
@@ -126,7 +133,8 @@ for state_idx,target_state in enumerate(target_states):
         "state":target_state.copy(), "Gamma": sim_step.Cinv@sim_step.C_g,
         "labels":polytope.labels.copy(), "A":polytope.A.copy(), "b":polytope.b.copy(),
         "radius":radii, "projection":np.ones(sim_step.num_dots,dtype=bool),
-        "C": sim_step.C.copy(), "C_g": sim_step.C_g.copy(), "offset": sim_step.offset.copy()
+        "C": sim_step.C.copy(), "C_g": sim_step.C_g.copy(), "offset": sim_step.offset.copy(),
+        "boundsA": sim_step.boundsA.copy(),"boundsb": sim_step.boundsb.copy() 
     })
     
     #compute a "bad" starting point
@@ -143,7 +151,7 @@ for state_idx,target_state in enumerate(target_states):
     print("rows T:", Ts[state_idx].shape[0])
     print(Ts[state_idx])
     start_time = timeit.default_timer()
-    A,b,x_m,x_p,found, num_searches = learn_convex_polytope(sim_step, delta, startpoint, Ts[state_idx].astype(float), gamma_step)
+    A,b,x_m,x_p,found, num_searches = learn_convex_polytope(sim_step, delta, startpoint, Ts[state_idx].astype(float), gamma_step, verbose=2)
     end_time = timeit.default_timer()
     
     #store results
