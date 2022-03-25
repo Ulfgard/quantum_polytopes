@@ -220,7 +220,7 @@ def count_separating(A, b, x_m, x_p, delta):
     # Count sample pairs that are separated by a plane
     f_m = (x_m @ A.T + b.reshape(1,-1))/np.maximum(norms.reshape(1,-1),1.e-5)
     f_p = (x_p @ A.T + b.reshape(1,-1))/np.maximum(norms.reshape(1,-1),1.e-5)
-    separated = np.logical_and(f_m < 0.5*delta, f_p > -0.5*delta) # True if boundary passes between points
+    separated = np.logical_and(f_m < 0, f_p > 0) # True if boundary passes between points
     
     for i in range(separated.shape[0]):
         # Could ignore points that are separated by multiple facets as they can be problematic?
