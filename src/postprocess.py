@@ -25,7 +25,8 @@ all_experiments = itertools.product(bases,rhos,deltas)
 results_virtual = Tree()
 results_poly = Tree()
 for base,rho,delta in all_experiments:
-    print(base,rho,delta)
+    print("processing", base,rho,delta)
+    print("#found\tinteres\tFalse\tunworkable")
     dim_base = base_info[base][0]
     dim_sub = base_info[base][1]
 
@@ -46,7 +47,7 @@ for base,rho,delta in all_experiments:
         except:
             print("error loading run "+file_truth+". Skipping.")
             A0success[run] = False
-            continue     
+            continue
             
         #evaluate A0
         A0_truth = data_truth['gamma']
@@ -64,7 +65,7 @@ for base,rho,delta in all_experiments:
         A0matches = np.sum(data_res['gammainfo'][-1][1] >=dim_base+5)
         A0success[run] = (A0matches == dim_base)
         A0searches[run] = data_res['gammainfo'][-1][0]
-        
+
         #no need to continue, if step 1 failed
         if not A0success[run]:
             continue
@@ -93,6 +94,7 @@ for base,rho,delta in all_experiments:
             boundsb = -2*np.ones(dim_sub)
             radius_res=np.zeros(A_res.shape[0])
             mid_res = np.zeros((A_res.shape[0],dim_sub))
+
             _, radius_res[found_res], mid_res[found_res] = sample_boundary_points(A_res[found_res], b_res[found_res], boundsA, boundsb)
             point_inside = np.mean(mid_res[found_res],axis=0)
             found_res = (radius_res > 2.0/delta)
@@ -142,9 +144,6 @@ for base,rho,delta in all_experiments:
                 index = np.argmin(-b_line[positive]/A_line[positive])
                 if positive[index] == pos_truth:
                     workable_interesting[-1] = True
-                else:
-                    print("found, but non-workable:", t)
-                
             
             if num_interesting == 0:
                 results_poly[base][rho][delta][run].append({"num_found":0, "num_interesting":0,
@@ -153,7 +152,7 @@ for base,rho,delta in all_experiments:
                 "err_b":[],
                 "false_pos": num_false_pos, "time":0, "searches":0
             })
-            print(num_found, num_interesting, num_false_pos)
+            print(num_found,"\t",num_interesting,"\t",num_false_pos,"\t", np.sum(found_interesting) - np.sum(workable_interesting))
             radius_interesting=np.array(radius_interesting)
             found_interesting=np.array(found_interesting,dtype=bool)
             workable_interesting = np.array(workable_interesting, dtype=bool)
