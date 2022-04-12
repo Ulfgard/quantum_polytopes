@@ -30,7 +30,7 @@ for i,base in enumerate(bases_virt):
 
 plt.gca().set_yticks([1,2,3,4])
 plt.gca().set_xticks([0.0,0.5,1.0])
-plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
+plt.gca().set_yticklabels([r"$\rho=1,\delta=0.002$",r"$\rho=1, \delta=0.001$",r"$\rho=3, \delta=0.002$",r"$\rho=3, \delta=0.001$"])
 plt.gca().set_xlim(-0.05,1.05)
 plt.gca().set_ylim(0.5,4.5)
 plt.legend()
@@ -50,10 +50,10 @@ for i,base in enumerate(bases_virt):
             label = names_virt[base]
         qs = results_virtual[base][rho][delta]["error_A0"]*180/np.pi
         y=j+(i/len(bases_virt)-0.5)*0.7
-        plt.plot(qs[[1,3]],(y,y), 'r'+markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
+        plt.plot(qs[[1,3]],(y,y), markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
         plt.plot(qs[2],y, markers[i], c=colors[i],linewidth=0.5)
 plt.gca().set_yticks([1,2,3,4])
-plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
+plt.gca().set_yticklabels([r"$\rho=1,\delta=0.002$",r"$\rho=1, \delta=0.001$",r"$\rho=3, \delta=0.002$",r"$\rho=3, \delta=0.001$"])
 plt.gca().set_ylim(0.5,4.5)
 plt.legend()
 plt.xlabel("Deviation of Normals (Degrees)")
@@ -70,10 +70,10 @@ for i,base in enumerate(bases_virt):
             label = names_virt[base]
         qs = results_virtual[base][rho][delta]["error_virt"]*180/np.pi
         y=j+(i/len(bases_virt)-0.5)*0.7
-        plt.plot(qs[[1,3]],(y,y), 'r'+markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
+        plt.plot(qs[[1,3]],(y,y), markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
         plt.plot(qs[2],y, markers[i], c=colors[i],linewidth=0.5)
 plt.gca().set_yticks([1,2,3,4])
-plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
+plt.gca().set_yticklabels([r"$\rho=1,\delta=0.002$",r"$\rho=1, \delta=0.001$",r"$\rho=3, \delta=0.002$",r"$\rho=3, \delta=0.001$"])
 plt.gca().set_ylim(0.5,4.5)
 plt.legend()
 plt.xlabel("Deviation of Normals (Degrees)")
@@ -91,11 +91,11 @@ for i,base in enumerate(bases_virt):
         label = None
         if j == 1:
             label = names_virt[base]
-        plt.plot(qs[[1,3]],(y,y), 'r'+markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
+        plt.plot(qs[[1,3]],(y,y), markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
         #plt.plot(qs[2],y, markers[i], c=colors[i],linewidth=0.5)
         
 plt.gca().set_yticks([1,2,3,4])
-plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
+plt.gca().set_yticklabels([r"$\rho=1,\delta=0.002$",r"$\rho=1, \delta=0.001$",r"$\rho=3, \delta=0.002$",r"$\rho=3, \delta=0.001$"])
 plt.gca().set_ylim(0.5,4.5)
 plt.gca().set_xlim(100,10000)
 plt.xscale('log')
@@ -123,7 +123,7 @@ for i,base in enumerate(bases_poly):
     print(base, num_interesting - num_found, num_interesting, 100*(1-num_found/num_interesting))
 plt.gca().set_yticks([1,2,3,4])
 plt.gca().set_xticks([0.9,0.95,1.0])
-plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
+plt.gca().set_yticklabels([r"$\rho=1,\delta=0.002$",r"$\rho=1, \delta=0.001$",r"$\rho=3, \delta=0.002$",r"$\rho=3, \delta=0.001$"])
 plt.gca().set_xlim(0.8905,1.005)
 plt.gca().set_ylim(0.5,4.5)
 plt.xlabel("Fraction Found")
@@ -150,7 +150,7 @@ for i,base in enumerate(bases_poly):
 
 plt.gca().set_yticks([1,2,3,4])
 plt.gca().set_xticks([0.5,0.6,0.7,0.8,0.9,1.0])
-plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
+plt.gca().set_yticklabels([r"$\rho=1,\delta=0.002$",r"$\rho=1, \delta=0.001$",r"$\rho=3, \delta=0.002$",r"$\rho=3, \delta=0.001$"])
 plt.gca().set_xlim(0.45,1.05)
 plt.gca().set_ylim(0.5,4.5)
 plt.legend()
@@ -181,7 +181,7 @@ for i,base in enumerate(bases_poly):
         plt.plot(qs[0]/2-1,y, markers[i], c=colors[i],linewidth=0.5)
         #plt.plot(qs[2],y, markers[i], c=colors[i],linewidth=0.5)
 plt.gca().set_yticks([1,2,3,4])
-plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
+plt.gca().set_yticklabels([r"$\rho=1,\delta=0.002$",r"$\rho=1, \delta=0.001$",r"$\rho=3, \delta=0.002$",r"$\rho=3, \delta=0.001$"])
 plt.xscale('log')
 plt.gca().set_xticks([0.01,0.1,1,10])
 plt.gca().set_xlim(0.007,100)
@@ -207,11 +207,11 @@ for i,base in enumerate(bases_poly):
         label = None
         if j == 1:
             label = names_poly[base]
-        plt.plot(qs[[1,3]],(y,y), 'r'+markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
+        plt.plot(qs[[1,3]],(y,y), markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
         #plt.plot(qs[2],y, markers[i], c=colors[i],linewidth=0.5)
         
 plt.gca().set_yticks([1,2,3,4])
-plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
+plt.gca().set_yticklabels([r"$\rho=1,\delta=0.002$",r"$\rho=1, \delta=0.001$",r"$\rho=3, \delta=0.002$",r"$\rho=3, \delta=0.001$"])
 plt.gca().set_ylim(0.5,4.5)
 plt.xscale('log')
 #plt.legend()
@@ -234,11 +234,11 @@ for i,base in enumerate(bases_poly):
         label = None
         if j == 1:
             label = names_poly[base]
-        plt.plot(qs[[1,3]],(y,y), 'r'+markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
+        plt.plot(qs[[1,3]],(y,y), markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
         #plt.plot(qs[2],y, markers[i], c=colors[i],linewidth=0.5)
         
 plt.gca().set_yticks([1,2,3,4])
-plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
+plt.gca().set_yticklabels([r"$\rho=1,\delta=0.002$",r"$\rho=1, \delta=0.001$",r"$\rho=3, \delta=0.002$",r"$\rho=3, \delta=0.001$"])
 plt.gca().set_ylim(0.5,4.5)
 plt.gca().set_xlim(100,15000)
 plt.xscale('log')
