@@ -120,7 +120,7 @@ for i,base in enumerate(bases_poly):
                 num_interesting[j-1] += poly["num_interesting"]
                 num_found[j-1] += poly["num_found"]
     plt.plot(num_found/num_interesting,[1,2,3,4], markers[i], label=names_poly[base], c=colors[i])
-    #print(base, num_interesting - num_found, num_interesting)
+    print(base, num_interesting - num_found, num_interesting, 100*(1-num_found/num_interesting))
 plt.gca().set_yticks([1,2,3,4])
 plt.gca().set_xticks([0.9,0.95,1.0])
 plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
@@ -240,7 +240,7 @@ for i,base in enumerate(bases_poly):
 plt.gca().set_yticks([1,2,3,4])
 plt.gca().set_yticklabels([r"$\rho=1,\delta=2mV$",r"$\rho=1, \delta=1mV$",r"$\rho=3, \delta=2mV$",r"$\rho=3, \delta=1mV$"])
 plt.gca().set_ylim(0.5,4.5)
-plt.gca().set_xlim(100,10000)
+plt.gca().set_xlim(100,15000)
 plt.xscale('log')
 plt.gca().set_xticks([100,1000,10000])
 plt.gca().set_xticklabels([r"100",r"1000",r"10000"])
@@ -295,6 +295,8 @@ for j,rho,delta in settings:
             possible += 1
             if num_workable == 6:
                 solved += 1
+        else:
+            print("not all required facets exists/are large enough")
     print("num shuttle solved:", rho, delta, solved, possible)
 
 t=np.array([-1,1,1,-1,-1,1])
