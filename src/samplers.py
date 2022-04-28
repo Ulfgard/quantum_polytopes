@@ -10,9 +10,10 @@ def naive_sampler(device, max_num_points, x_0, pos_dir=False):
         if pos_dir:
             p = np.exp(2*p)
         x_mi,x_pi, get_v = device.line_search(x_0, p)
-        x_m.append(x_mi)
-        x_p.append(x_pi)
-        vs.append(get_v)
+        if not get_v is None:
+            x_m.append(x_mi)
+            x_p.append(x_pi)
+            vs.append(get_v)
     x_p = np.array(x_p)
     x_m = np.array(x_m)
     return x_m, x_p, vs
