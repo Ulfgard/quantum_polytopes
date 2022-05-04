@@ -16,7 +16,7 @@ For the notebooks, you also need:
 
 ## Reproducing the Plots
 
-The raw results of our experiments are stored in a [frozen archive](https://erda.ku.dk/archives/179caea7db42327f0911ab8a07f042d1/published-archive.html). 
+The raw results of our experiments are stored in a [frozen archive](https://erda.ku.dk/archives/88e993ae5f8ac761d6c2af16b6f4b953/published-archive.html). 
 Please download the file and unzip it in the base directory of this repository. This will result in a folder `results/` with the results of all our five scenarios:
 
 1. ladder (S2)
@@ -51,3 +51,8 @@ This will generate files directly in the `results/` folder. For example
 python3.8 src/experiment.py 3x3 5 3 1000
 ```
 Will generate the files `results/truth_3x3_5_3_1000.pkl` and `3x3/estimate_3x3_5_3_1000.pkl`.
+
+
+## Tutorials
+
+Please check the ipython Notebooks in the src repository. We advise to start with the single electron pump example before checking the 1x3 device and then the 2x2 device.
