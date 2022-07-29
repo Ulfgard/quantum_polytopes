@@ -1,7 +1,6 @@
 from autograd import numpy as np
 from fit_zero_boundary import learn_zero_polytope
 from fit_convex_polytope import learn_convex_polytope, generate_transitions_for_state, sample_boundary_points
-import matplotlib.pyplot as plt
 import pickle
 import timeit
 
@@ -32,6 +31,29 @@ elif experiment == "4x4": #S4
         target_states = np.ones((1,n_rows * n_cols),dtype=np.int64)
         sim = sim_NxM(n_rows, n_cols, delta, rho)
         Ts = [generate_transitions_for_state(target_states[0], max_k=2, max_moves = 1, has_reservoir=has_reservoir)]
+elif experiment == "4x4fast":
+        n_rows = 4
+        n_cols = 4
+        has_reservoir = True
+        target_states = np.ones((1,n_rows * n_cols),dtype=np.int64)
+        sim = sim_NxM(n_rows, n_cols, delta, rho)
+        Ts = [generate_transitions_for_state(target_states[0], max_k=2, max_moves = 1, has_reservoir=has_reservoir)]
+        selected=np.ones(len(Ts[0]), dtype=bool)
+        for k in range (len(Ts[0])):
+                pone_pos = np.where(Ts[0][k] == 1)[0]
+                if pone_pos.shape[0] == 0:
+                        continue
+                mone_pos = np.where(Ts[0][k] == -1)[0]
+                if mone_pos.shape[0] == 0:
+                        continue
+                pone_loc0 = pone_pos // 4
+                pone_loc1 = pone_pos % 4
+                mone_loc0 = mone_pos // 4
+                mone_loc1 = mone_pos % 4
+                diff = np.maximum(np.abs(pone_loc0-mone_loc0),np.abs(pone_loc1-mone_loc1))
+                if diff > 1:
+                        selected[k] = 0
+        Ts[0]=Ts[0][selected]
 elif experiment == "3x3": #S3
         n_rows = 3
         n_cols = 3
