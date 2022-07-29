@@ -15,10 +15,10 @@ with open("results/poly_eval.pkl", "rb") as f:
 
 bases_virt=["ladder", "3x3", "4x4"]
 names_virt= {"shuttle":"$3\\times2$","ladder":"$3\\times2$", "3x3":"$3\\times3$", "4x4":"$4\\times4$"}
-bases_poly=["shuttle", "ladder", "3x3", "4x4", "4x4nores"]
-names_poly= {"shuttle":"$S_1$","ladder":"$S_2$", "3x3":"$S_3$", "4x4":"$S_4$", "4x4nores":"$S_5$"}
-markers = ('x', '+', '.', '1', '*','|')
-colors=('r','orange','blue','black', 'grey')
+bases_poly=["shuttle", "ladder", "3x3", "4x4", "4x4fast", "4x4nores"]
+names_poly= {"shuttle":"$S_1$","ladder":"$S_2$", "3x3":"$S_3$", "4x4":"$S_4$", "4x4fast":"$S_5$", "4x4nores":"$S_6$"}
+markers = ('x', '+', '.', '1', '*','d')
+colors=('r','orange','blue','black', 'grey', 'green')
 settings= [(1,1,500),(2,1,1000),(3,3,500),(4,3,1000)]
 #num unsuccessful
 plt.figure(figsize=(4,2.5))
@@ -195,6 +195,7 @@ plt.savefig("results/poly_radii_missed.eps",format="eps")
 plt.close()
 
 #runtime
+print ("runtime")
 plt.figure(figsize=(4,2.5))
 for i,base in enumerate(bases_poly):
     for j,rho,delta in settings:
@@ -208,6 +209,7 @@ for i,base in enumerate(bases_poly):
         if j == 1:
             label = names_poly[base]
         plt.plot(qs[[1,3]],(y,y), markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
+        print(base, rho, delta, qs[2])
         #plt.plot(qs[2],y, markers[i], c=colors[i],linewidth=0.5)
         
 plt.gca().set_yticks([1,2,3,4])
@@ -222,6 +224,7 @@ plt.savefig("results/poly_time.eps",format="eps")
 plt.close()
 
 #searches
+print ("line searches")
 plt.figure(figsize=(4,2.5))
 for i,base in enumerate(bases_poly):
     for j,rho,delta in settings:
@@ -234,6 +237,7 @@ for i,base in enumerate(bases_poly):
         label = None
         if j == 1:
             label = names_poly[base]
+        print(base, rho, delta, qs[2])
         plt.plot(qs[[1,3]],(y,y), markers[i]+'--', label=label, c=colors[i],linewidth=0.5)
         #plt.plot(qs[2],y, markers[i], c=colors[i],linewidth=0.5)
         

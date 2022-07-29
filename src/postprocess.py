@@ -9,13 +9,13 @@ class Tree(defaultdict):
     def __init__(self, value=None):
         super(Tree, self).__init__(Tree)
 
-bases = ["ladder", "shuttle", "3x3", "4x4","4x4nores"]
+bases = ["ladder", "shuttle", "3x3", "4x4","4x4nores", "4x4fast"]
 base_info = {}
 base_info["3x3"] = [9,9,[]]
 base_info["4x4to3x3"] = [16,9,[]]
 base_info["4x4nores"] = [16,15,[]]
-base_info["4x4vnores"] = [16,15,[]]
 base_info["4x4"] = [16,16,[]]
+base_info["4x4fast"] = [16,16,[]]
 base_info["shuttle"] = [6,6]
 base_info["ladder"] = [6,6]
 rhos =[3,1]
