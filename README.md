@@ -17,16 +17,17 @@ For the notebooks, you also need:
 ## Reproducing the Plots
 
 The raw results of our experiments are stored in a [frozen archive](https://erda.ku.dk/archives/88e993ae5f8ac761d6c2af16b6f4b953/published-archive.html). 
-Please download the file and unzip it in the base directory of this repository. This will result in a folder `results/` with the results of all our five scenarios:
+Please download the file and unzip it in the base directory of this repository. This will result in a folder `results/` with the results of all our scenarios:
 
 1. ladder (S2)
 2. shuttle (S1)
 3. 3x3 (S3)
 4. 4x4 (S4)
-5. 4x4nores (S5)
+5. 4x4fast (S5)
+6. 4x4nores (S6)
 
 The results for each scenario and run consist of a pair of failes that contain for each run the true and estimated polytope as a python pickle and the naming convention is `truth_{scenario}_{runid}_{rho}_{invdelta}.pkl`
-and  `estimate_{scenario}_{runid}_{rho}_{invdelta}.pkl`, respectively. Here, {scenario} is one of the 5 scenarios above, {runid} is a number between 1-20, rho is either 1 or 3 and represents the device difficulty and invdelta is the inverse line-search precision. 1mv is 1000 and 2mv is 500. Thus, `3x3/truth_3x3_5_3_1000.pkl` is the ground truth of the 5th run in the 3x3 scenario when rho is 3 and precision is 1mv.
+and  `estimate_{scenario}_{runid}_{rho}_{invdelta}.pkl`, respectively. Here, {scenario} is one of the 6 scenarios above, {runid} is a number between 1-20, rho is either 1 or 3 and represents the device difficulty and invdelta is the inverse line-search precision. 1mv is 1000 and 2mv is 500. Thus, `3x3/truth_3x3_5_3_1000.pkl` is the ground truth of the 5th run in the 3x3 scenario when rho is 3 and precision is 1mv.
 
 To evaluate, you need to run the post processing script before running evaluate:
 
