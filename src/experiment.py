@@ -68,14 +68,6 @@ elif experiment == "shuttle": #S1
         target_states = np.array([[1,0,0,0,1,0],[1,0,1,0,0,0],[1,0,0,1,0,0], [0,0,1,1,0,0], [0,0,0,1,1,0], [0,0,1,0,1,0]], dtype=np.int64)
         sim = sim_NxM(n_rows, n_cols, delta, rho)
         Ts = [generate_transitions_for_state(s, max_k=2, max_moves = 1) for s in target_states]
-elif experiment == "shuttle3": #S1 with more states learned
-        n_rows = 3
-        n_cols = 2
-        has_reservoir = True
-        target_states = np.array([[1,0,0,0,1,0],[1,0,1,0,0,0],[1,0,0,1,0,0], [0,0,1,1,0,0], [0,0,0,1,1,0], [0,0,1,0,1,0]], dtype=np.int64)
-        sim = sim_NxM(n_rows, n_cols, delta, rho)
-        Ts = [generate_transitions_for_state(s, max_k=3, max_moves = 2) for s in target_states]
-    
 elif experiment == "ladder": #S2
         n_rows = 3
         n_cols = 2

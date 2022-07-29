@@ -71,6 +71,16 @@ class Simulator:
     def _check_transition_existence(self, A, b):
         keep_list = np.ones(A.shape[0], dtype=bool)
         
+        #check if there is any feasible point in the polytope
+        #this can only happen, when computing a slice
+        c_lp = np.zeros(A.shape[1])
+        x = cp.Variable(A.shape[1])
+        prob = cp.Problem(cp.Minimize(c_lp @ x), 
+                [A@ x + b <= 0])
+        prob.solve(verbose=False, max_iters=100000)
+        if prob.status in ["infeasible", "infeasible_inaccurate"]:
+            return None
+        
         for k in range(A.shape[0]):
             # Default: assume it is not kept (could also initialize list with zeros)
             keep_list[k] = False
@@ -79,10 +89,8 @@ class Simulator:
             bk = b[keep_list]
             A_eq = A[k]
             b_eq = b[k]
-            c_lp = np.zeros(A.shape[1])
             
             try:
-                x = cp.Variable(A.shape[1])
                 prob = cp.Problem(cp.Minimize(c_lp @ x),
                      [A_eq @ x +b_eq == 0, Ak@ x + bk <= 0])
                 prob.solve(verbose=False, max_iters=100000)
@@ -140,6 +148,8 @@ class Simulator:
 
             # ... and see if they are feasible
             keep_list=self._check_transition_existence(A,b)
+            if keep_list is None:
+                return np.zeros((0, self.num_inputs)),np.zeros(0), np.zeros(0)
             As.append(A[keep_list,:])
             bs.append(b[keep_list])
             states.append(state_list[keep_list])
@@ -164,6 +174,8 @@ class Simulator:
                 b = b[indxs]
                 # Find transitions in the merged sets
                 keep_list = self._check_transition_existence(A,b)
+                if keep_list is None:
+                    return np.zeros((0, self.num_inputs)),np.zeros(0), np.zeros(0)
 
                 # Add the merged ones back to the list
                 As.append(A[keep_list])
@@ -173,6 +185,22 @@ class Simulator:
     def _add_polytope(self, state, has_reservoir, A, b, labels, must_verify):
         # Add another polytope we've found to the internal list of polytopes
         state = np.array(state, dtype=int)
+        dict_key = tuple(state) + (has_reservoir,)
+        
+        #check if polytope is not existing
+        if A.shape[0] == 0:
+            polytope = type('', (), {})()
+            polytope.A = A
+            polytope.b = b
+            polytope.labels = labels
+            polytope.point_inside = None
+            polytope.must_verify = False
+            
+            
+            self.prepared_transitions[dict_key] = polytope
+            return
+    
+        
         
         # Compute point inside
         norm_vector = np.linalg.norm(A, axis=1)
@@ -301,16 +329,24 @@ class Simulator:
     def slice(self, P, m):
         # Deprecated! Newer version in the works
         new_Cg = self.C_g@P
-        new_offset = self.offset+self.Cinv@self.C_g@m
+        offset_div = self.Cinv@self.C_g@m
+        new_offset = self.offset+offset_div
         
         new_boundsA = self.boundsA@P
         new_boundsb = self.boundsb + self.boundsA@m
+        
+        #throw out almost orthogonal bounds
+        sel = np.linalg.norm(new_boundsA,axis=1)>1.e-7*np.linalg.norm(self.boundsA,axis=1)
+        new_boundsA = new_boundsA[sel]
+        new_boundsb = new_boundsb[sel]
+        
         new_sim = Simulator(new_Cg, self.C, self.line_search_precision, new_boundsA, new_boundsb,self.enumerator_func)
         new_sim.offset = new_offset
         new_sim.has_reservoir = self.has_reservoir
         
         # Copy over all existing polytopes and transform them. 
         # But be lazy, don't verify the equations, yet.
+        """
         for key in self.prepared_transitions.keys():
             polytope = self.prepared_transitions[key]
             A = polytope.A.copy()
@@ -323,6 +359,7 @@ class Simulator:
             has_reservoir = key[-1]
             
             new_sim._add_polytope(state, has_reservoir, A, b, labels, P.shape[0] != P.shape[1])
+        """
         new_sim.activate_state(self.active_state)
         return new_sim
 
