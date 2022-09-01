@@ -166,12 +166,12 @@ for state_idx,target_state in enumerate(target_states):
     print("rows T:", Ts[state_idx].shape[0])
     print(Ts[state_idx])
     start_time = timeit.default_timer()
-    A,b,x_m,x_p,found, num_searches = learn_convex_polytope(sim_step, delta, startpoint, Ts[state_idx].astype(float), gamma_step, verbose=2)
+    A,b,x_m,x_p,found, num_searches, params = learn_convex_polytope(sim_step, delta, startpoint, Ts[state_idx].astype(float), gamma_step, verbose=2)
     end_time = timeit.default_timer()
     
     #store results
     results.append({
-        "state":target_state.copy(), "Gamma": gamma_step,
+        "state":target_state.copy(), "Gamma": gamma_step, "params":params,
         "labels":Ts[state_idx].copy(), "A":A.copy(), "b":b.copy(),
         "found":found,
         "x_m":x_m, "x_p":x_p, "time":end_time-start_time,"searches":num_searches

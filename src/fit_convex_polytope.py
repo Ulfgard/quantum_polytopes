@@ -167,11 +167,48 @@ def logsumexp_vjp(ans, x):
     return lambda g: np.reshape(g,(-1,1)) * np.exp(x - np.reshape(ans,(-1,1)))
 defvjp(logsumexp, logsumexp_vjp)
 
-def compute_planes(alpha, s, G, eta):
-    return np.diag(log1pexp(s)) @ G @ (np.diag(np.exp(alpha)) @ eta)
+class ConstantInteractionParameterisation:
+    def __init__(self, Gamma, T):
+        self.Gamma = Gamma
+        self.T = T
+        self.log_lambda_reg = 10.0
+        self.log_lambda = np.zeros(Gamma.shape[0])
+        self.s = np.zeros(T.shape[0])
+        self.b = np.zeros(T.shape[0])
+    
+    def to_param(self):
+        m = self.T.shape[0]
+        n = self.T.shape[1]
+        point = np.zeros(2*m+n+n*n)
+        point[:n] = self.log_lambda
+        point[n:n+m] = self.s
+        point[n+m:n+m+m] = self.b
+        
+        return point
+    
+    def to_dict(self):
+        return {'lambda':np.exp(self.log_lambda), 'c': log1pexp(self.s), 'b': self.b}
+    
+    def from_param(self,point):
+        m = self.T.shape[0]
+        n = self.T.shape[1]
+        self.log_lambda = point[:n]
+        self.s = point[n:n+m]
+        self.b = point[n+m:n+m+m]
+        
+    def compute_planes(self):
+        return np.diag(log1pexp(self.s)) @ self.T @ (np.diag(np.exp(self.log_lambda)) @ self.Gamma), self.b
+        
+    def regularizers(self):
+        return self.log_lambda_reg*np.sum(self.log_lambda**2) # + self.eps_reg*np.sum(eps**2)
 
+    def reset_transition(self, reset_markers, x_m, x_p, delta):
+        self.s[reset_markers] = np.ones(np.sum(reset_markers))/delta
+        A,_ = self.compute_planes()
+        b0 = -np.max(A@x_m.T,axis=1)
+        self.b[reset_markers] = b0[reset_markers]
 
-def solve_max_likelihood_problem(x_m, x_p, alpha_init, s_init, b_init, G, eta, delta, verbose = 0):
+def solve_max_likelihood_problem(x_m, x_p, parameterisation, delta, verbose = 0):
 
     def neg_log_loss(A, b, x, y):
         #linear activations
@@ -180,31 +217,25 @@ def solve_max_likelihood_problem(x_m, x_p, alpha_init, s_init, b_init, G, eta, d
         act = y * logsumexp(act)
         return log1pexp(-act)
         
-    m = G.shape[0]
-    n = G.shape[1]
     def obj(x):
-        alpha = x[:n]
-        s = x[n:n+m]
-        b = x[n+m:]
+        parameterisation.from_param(x)
         
-        A =  compute_planes(alpha, s, G, eta)
+        A,b = parameterisation.compute_planes()
         nll_m = neg_log_loss(A, b, x_m,-1)
         nll_p = neg_log_loss(A, b, x_p,1)
         
         # The regularizer
-        penalty = 10*np.sum(alpha**2) + 0.01*np.sum((A*delta)**2)
+        penalty = 0.01*np.sum((A*delta)**2) + parameterisation.regularizers()
         
         # Compute loss
         return (np.sum(nll_m) + np.sum(nll_p) + penalty)/x_m.shape[0]
     
-    x_init=np.zeros(2*m+n)
-    x_init[:n] = alpha_init
-    x_init[n:n+m] = s_init
-    x_init[n+m:] = b_init
+    x_init=parameterisation.to_param()
     
     # Solve
     res = minimize(obj, x_init, jac=grad(obj), tol=1.e-4, options={'disp':verbose > 1})
-    return res.x[:n], res.x[n:n+m], res.x[n+m:]
+    parameterisation.from_param(res.x)
+    return parameterisation
     
 def count_separating(A, b, x_m, x_p, delta):
     """
@@ -229,75 +260,9 @@ def count_separating(A, b, x_m, x_p, delta):
     
     return counts
     
-def generate_transitions_for_state(target_state, max_k=3, max_moves = None, has_reservoir=True):
-    """
-    Generates a list of all transitions that can be performed from 'target_state', based on 
-    whether a reservoir is available, based on how many particles can move simultaneously (max_k),
-    and based on how many moves they can make in total.
-    
-    This function works by first creating a list of all possible transitions, and then removing those
-    that are not allowed by constraints. 
-    """
-    # Extract the number of dots
-    n_dots = target_state.shape[0]
-    
-    Gs=[np.zeros((1,n_dots),dtype=np.int64)] # Adding starting condition for loop below. will be removed afterwards.
-    
-    # First we create a set of transitions by taking all transitions for max k-1 changes
-    # and then add a few & unique 
-    for k in range(max_k):
-        
-        prev=Gs[-1]
-        Gk=[]
-        for g in prev:      
-            # For each dot ...
-            for i in range(n_dots):
-                # ... check if it is empty
-                if g[i] == 0:
-                    # If so, we create a new state with 1 particle on this dot
-                    gnew = g.copy()
-                    gnew[i] = 1
-                    Gk.append(gnew.copy())
-                    
-                    # If the target state has at least one particle in this location already ...
-                    if target_state[i] >= 1:
-                        # ... also add the transition where this particle is removed
-                        gnew[i] = -1
-                        Gk.append(gnew)
-                        
-        # Keep only unique ones
-        Gk = np.array(Gk) 
-        Gk = np.unique(Gk,axis=0)
-        
-        if not len(Gk):
-            continue
-        
-        # Filter transitions which are ruled out by max moves
-        if not max_moves is None:
-            keep_pos = np.sum(Gk == 1,axis=1) <= max_moves
-            keep_neg = np.sum(Gk == -1,axis=1) <= max_moves
-            Gk=Gk[np.logical_and(keep_pos,keep_neg)]
-
-        Gs.append(Gk)
-   
-    # Now filter out all transitions, which are unphysical
-    # i.e. more than one electron entering while none is leaving the array and vice versa
-    for k in range(len(Gs)): #max_k+1):
-        if k < 2:
-            continue
-        
-        keep = np.abs(np.sum(Gs[k],axis=1)) < k
-        Gs[k] = Gs[k][keep]
-    
-    # Select based on reservoir
-    G=np.vstack(Gs[1:])
-    if not has_reservoir:
-        G=G[np.sum(G,axis=1)==0]
-    return G
-    
     
 #  The implementation of the full algorithm
-def learn_convex_polytope(device, delta, startpoint, G, eta, max_searches = 15000, verbose = 0):
+def learn_convex_polytope(device, delta, startpoint, T, Gamma, max_searches = 15000, verbose = 0):
     # Function to filter close duplicates
     def filter_close(x, y, delta):
         dist = cdist(x,x)
@@ -311,41 +276,34 @@ def learn_convex_polytope(device, delta, startpoint, G, eta, max_searches = 1500
         return x[keep==True,:],y[keep==True,:]
 
     # Sample initial dataset
-    x_m, x_p, _ = naive_sampler(device, G.shape[1]**2,startpoint)
+    x_m, x_p, _ = naive_sampler(device, T.shape[1]**2,startpoint)
     
-    d = eta.shape[1]
-    alpha = np.zeros(eta.shape[0])
+    d = Gamma.shape[1]
     num_searches = x_m.shape[0]
-    counts = np.zeros(G.shape[0])
-    s = np.zeros(G.shape[0])
-    b = np.zeros(G.shape[0])
+    counts = np.zeros(T.shape[0])
+    params = ConstantInteractionParameterisation(Gamma, T)
     
     while True:
-        renew_idx = counts < d+5
-        s[renew_idx] = np.ones(np.sum(renew_idx))/delta
-        A = compute_planes(alpha, s, G, eta)
-        b0 = -np.max(A@x_m.T,axis=1) #+0.5*delta*np.linalg.norm(A,axis=1)
-        b[renew_idx] = b0[renew_idx]
+        renew_markers = counts < d+5
+        params.reset_transition(renew_markers, x_m, x_p, delta)
         
         # Fit model
-        alpha, s, b = solve_max_likelihood_problem(x_m, x_p, alpha, s, b, G, eta, delta, verbose)
+        params = solve_max_likelihood_problem(x_m, x_p, params, delta, verbose)
         
-        A = compute_planes(alpha, s, G, eta)
+        A,b = params.compute_planes()
         # Check which facets we found
         found = np.linalg.norm(A,axis=1) > 0.1/delta
         
-        # Sample new points
-        A_norm = compute_planes(alpha, np.zeros(G.shape[0]), G, eta)
-        b_norm = -np.max(A_norm@x_m.T,axis=1)
-        A_norm[found,:] = A[found,:]
-        b_norm[found] = b[found]
+        # Sample new points, but include safe defaults for transitions that are not found
+        params.reset_transition(~found, x_m, x_p, delta)
+        A_norm,b_norm = params.compute_planes()
         
         do_sample = counts <= 2*(d+5)
         x_m_new, x_p_new, num_searches_iter, rs = sample_model(device, x_m, A_norm, b_norm, do_sample)
         if x_m_new.shape[0] == 0:
-            x_m_new, x_p_new, _ = naive_sampler(device, 3*G.shape[0],np.mean(x_m,axis=0))
+            x_m_new, x_p_new, _ = naive_sampler(device, 3*T.shape[0],np.mean(x_m,axis=0))
             num_searches_iter = x_m_new.shape[0]
-            rs=np.ones(G.shape[0])
+            rs=np.ones(T.shape[0])
         x_m = np.vstack([x_m,x_m_new])
         x_p = np.vstack([x_p,x_p_new])
         x_m, x_p = filter_close(x_m,x_p, 0.5*delta)
@@ -359,7 +317,7 @@ def learn_convex_polytope(device, delta, startpoint, G, eta, max_searches = 1500
             print("Number of transitions found:", np.sum(filter))
             print("max_rad not found:", max_r_not_found)
             for pos in np.where(filter)[0]:
-                print( G[pos,:], counts[pos], rs[pos])
+                print( T[pos,:], counts[pos], rs[pos])
                 
             if verbose > 2:
                 print("alphas:", np.exp(alpha)/np.exp(alpha[0]))
@@ -379,6 +337,72 @@ def learn_convex_polytope(device, delta, startpoint, G, eta, max_searches = 1500
                 print("Number of transitions found:", np.sum(filter))
                 print("max_rad not found:", max_r_not_found)
                 for pos in np.where(filter)[0]:
-                    print( G[pos,:], counts[pos], rs[pos])
+                    print( T[pos,:], counts[pos], rs[pos])
                     
-            return A, b, x_m, x_p, filter, num_searches
+            return A, b, x_m, x_p, filter, num_searches, params.to_dict()
+            
+def generate_transitions_for_state(target_state, max_k=3, max_moves = None, has_reservoir=True):
+    """
+    Generates a list of all transitions that can be performed from 'target_state', based on 
+    whether a reservoir is available, based on how many particles can move simultaneously (max_k),
+    and based on how many moves they can make in total.
+    
+    This function works by first creating a list of all possible transitions, and then removing those
+    that are not allowed by constraints. 
+    """
+    # Extract the number of dots
+    n_dots = target_state.shape[0]
+    
+    Ts=[np.zeros((1,n_dots),dtype=np.int64)] # Adding starting condition for loop below. will be removed afterwards.
+    
+    # First we create a set of transitions by taking all transitions for max k-1 changes
+    # and then add a few & unique 
+    for k in range(max_k):
+        
+        prev=Ts[-1]
+        Tk=[]
+        for g in prev:      
+            # For each dot ...
+            for i in range(n_dots):
+                # ... check if it is empty
+                if g[i] == 0:
+                    # If so, we create a new state with 1 particle on this dot
+                    gnew = g.copy()
+                    gnew[i] = 1
+                    Tk.append(gnew.copy())
+                    
+                    # If the target state has at least one particle in this location already ...
+                    if target_state[i] >= 1:
+                        # ... also add the transition where this particle is removed
+                        gnew[i] = -1
+                        Tk.append(gnew)
+                        
+        # Keep only unique ones
+        Tk = np.array(Tk) 
+        Tk = np.unique(Tk,axis=0)
+        
+        if not len(Tk):
+            continue
+        
+        # Filter transitions which are ruled out by max moves
+        if not max_moves is None:
+            keep_pos = np.sum(Tk == 1,axis=1) <= max_moves
+            keep_neg = np.sum(Tk == -1,axis=1) <= max_moves
+            Tk=Tk[np.logical_and(keep_pos,keep_neg)]
+
+        Ts.append(Tk)
+   
+    # Now filter out all transitions, which are unphysical
+    # i.e. more than one electron entering while none is leaving the array and vice versa
+    for k in range(len(Ts)): #max_k+1):
+        if k < 2:
+            continue
+        
+        keep = np.abs(np.sum(Ts[k],axis=1)) < k
+        Ts[k] = Ts[k][keep]
+    
+    # Select based on reservoir
+    T=np.vstack(Ts[1:])
+    if not has_reservoir:
+        T=T[np.sum(T,axis=1)==0]
+    return T
